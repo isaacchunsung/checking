@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30초 단위 변경 QR 코드 생성기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #qrcode {
+            margin: 20px auto;
+            width: 200px;
+            height: 200px;
+        }
+        
+        #timer {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        #urlDisplay {
+            word-break: break-all;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>30초 단위 변경 QR 코드 생성기</h1>
+        
+        <p>URL을 입력하시면 30초마다 변경되는 QR 코드를 생성합니다.</p>
+        
+        <input type="text" id="urlInput" placeholder="https://example.com" />
+        <button onclick="generateQR()">QR 코드 생성</button>
+        
+        <div id="urlDisplay"></div>
+        <div id="qrcode"></div>
+        <div id="timer"></div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        let qr = null;
+        let baseUrl = "";
+        let intervalId = null;
+        let timerIntervalId = null;
+        
+        function generateQR() {
+            baseUrl = document.getElementById("urlInput").value.trim();
+            
+            if (!baseUrl) {
+                alert("URL을 입력해주세요!");
+                return;
+            }
+            
+            // URL 표시
+            document.getElementById("urlDisplay").style.display = "block";
+            document.getElementById("urlDisplay").textContent = baseUrl;
+            
+            // 이미 실행 중인 타이머가 있다면 제거
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId);
+            }
+            
+            // QR 코드 생성 영역 초기화
+            document.getElementById("qrcode").innerHTML = "";
+            qr = new QRCode(document.getElementById("qrcode"), {
+                width: 200,
+                height: 200
+            });
+            
+            // 즉시 첫 QR 코드 생성
+            updateQRCode();
+            
+            // 30초마다 QR 코드 업데이트
+            intervalId = setInterval(updateQRCode, 30000); // 30000ms = 30초
+            
+            // 1초마다 타이머 업데이트
+            updateCountdown();
+            timerIntervalId = setInterval(updateCountdown, 1000);
+        }
+        
+        function updateQRCode() {
+            const timestamp = Math.floor(Date.now() / 30000); // 현재 시간을 30초 단위로 변환
+            const uniqueUrl = `${baseUrl}?t=${timestamp}`;
+            qr.clear();
+            qr.makeCode(uniqueUrl);
+        }
+        
+        function updateCountdown() {
+            const now = new Date();
+            const secondsInCurrentHalfMinute = (now.getSeconds() % 30);
+            const secondsLeft = 30 - secondsInCurrentHalfMinute;
+            document.getElementById("timer").textContent = 
+                `다음 QR 코드 변경까지 ${secondsLeft}초 남았습니다.`;
+                
+            // QR 코드가 변경되는 시점에 코드를 업데이트 (정확한 타이밍을 위해)
+            if (secondsLeft === 30) {
+                updateQRCode();
+            }
+        }
+    </script>
+</body>
+</html>
